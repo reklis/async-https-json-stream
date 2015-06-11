@@ -35,3 +35,7 @@ currently accepts any certificate as valid for testing instead of properly valid
 
     # run
     ./test.o
+
+### License
+
+MIT
