@@ -26,12 +26,12 @@ currently accepts any certificate as valid for testing instead of properly valid
 
 ### running the test
 
-# edit .env to setup your environment variables
-cp .env.sample.sh .env
-source .env
+    # edit .env to setup your environment variables
+    cp .env.sample.sh .env
+    source .env
 
-# compile
-make
+    # compile
+    make
 
-# run
-./test.o
+    # run
+    ./test.o
