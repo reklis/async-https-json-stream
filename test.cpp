@@ -6,7 +6,7 @@
 
 #include <picojson.h>
 
-#include "./asyncclient.hpp"
+#include "./async_https_json_stream.hpp"
 
 std::string tw_stream_host = "stream.twitter.com";
 std::string tw_stream_port = "443";
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     if (!oauth_token_secret.length())
         return 4;
 
-    std::cout << "term to track (ex: github): ";
+    std::cout << "term to track (ex: apple): ";
     std::string tw_track_value;
     std::getline(std::cin, tw_track_value);
 
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     int tweet_max = 13;
     int tweet_count;
 
-    AsyncHttpsJsonClient c(
+    ahjs::AsyncHttpsJsonStream c(
         io_service,
         io_context,
         tw_stream_host,
@@ -100,15 +100,6 @@ int main(int argc, char** argv) {
 
         }
     );
-
-    // AsyncHttpsClient c(
-    //     io_service,
-    //     io_context,
-    //     "httpbin.org",
-    //     "443",
-    //     "/post",
-    //     "basic qux:baz",
-    //     "foo=bar");
 
     io_service.run();
 

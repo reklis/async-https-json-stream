@@ -4,7 +4,7 @@ c++ header-only async http library to stream json to a lambda using boost asio
 
 in a nutshell:
 
-    AsyncHttpsJsonClient c(
+    ahjs::AsyncHttpsJsonStream c(
         io_service,
         io_context,
         "httpbin.org",

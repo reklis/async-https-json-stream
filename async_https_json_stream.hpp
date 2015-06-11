@@ -9,14 +9,17 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/bind.hpp>
 
+namespace ahjs
+{
+
 using ContentCallback = std::function<void(const std::string&)>;
 
-class AsyncHttpsJsonClient
+class AsyncHttpsJsonStream
 {
 
 public:
 
-  AsyncHttpsJsonClient(
+  AsyncHttpsJsonStream(
     boost::asio::io_service& io_service,
     boost::asio::ssl::context& context,
     const std::string& server,
@@ -44,7 +47,7 @@ public:
 
     boost::asio::ip::tcp::resolver::query query(server, port);
     resolver_.async_resolve(query,
-        boost::bind(&AsyncHttpsJsonClient::handle_resolve, this,
+        boost::bind(&AsyncHttpsJsonStream::handle_resolve, this,
           boost::asio::placeholders::error,
           boost::asio::placeholders::iterator));
   }
@@ -73,7 +76,7 @@ private:
       socket_.set_verify_mode(
         boost::asio::ssl::context::verify_none);
       socket_.set_verify_callback(
-        boost::bind(&AsyncHttpsJsonClient::verify_certificate, this, _1, _2));
+        boost::bind(&AsyncHttpsJsonStream::verify_certificate, this, _1, _2));
 
       // socket_.lowest_layer()
       //   .set_option(boost::asio::ip::tcp::no_delay(true));
@@ -81,7 +84,7 @@ private:
       // Attempt a connection to each endpoint in the list until we
       // successfully establish a connection.
       boost::asio::async_connect(socket_.lowest_layer(), endpoint_iterator,
-          boost::bind(&AsyncHttpsJsonClient::handle_connect, this,
+          boost::bind(&AsyncHttpsJsonStream::handle_connect, this,
             boost::asio::placeholders::error));
     }
     else
@@ -97,7 +100,7 @@ private:
       // std::cout << "Connect OK\n";
 
       socket_.async_handshake(boost::asio::ssl::stream_base::client,
-              boost::bind(&AsyncHttpsJsonClient::handle_handshake, this,
+              boost::bind(&AsyncHttpsJsonStream::handle_handshake, this,
                   boost::asio::placeholders::error));
     }
     else
@@ -113,7 +116,7 @@ private:
       // std::cout << "Handshake OK\n";
 
       boost::asio::async_write(socket_, request_,
-        boost::bind(&AsyncHttpsJsonClient::handle_write_request, this,
+        boost::bind(&AsyncHttpsJsonStream::handle_write_request, this,
           boost::asio::placeholders::error));
     }
     else
@@ -132,7 +135,7 @@ private:
       // automatically grow to accommodate the entire line. The growth may be
       // limited by passing a maximum size to the streambuf constructor.
       boost::asio::async_read_until(socket_, response_, "\r\n",
-          boost::bind(&AsyncHttpsJsonClient::handle_read_status_line, this,
+          boost::bind(&AsyncHttpsJsonStream::handle_read_status_line, this,
             boost::asio::placeholders::error));
     }
     else
@@ -171,7 +174,7 @@ private:
 
       // Read the response headers, which are terminated by a blank line.
       boost::asio::async_read_until(socket_, response_, "\r\n",
-          boost::bind(&AsyncHttpsJsonClient::handle_read_headers, this,
+          boost::bind(&AsyncHttpsJsonStream::handle_read_headers, this,
             boost::asio::placeholders::error));
     }
     else
@@ -291,7 +294,7 @@ private:
     // Continue reading remaining data until EOF
     boost::asio::async_read(socket_, response_,
         boost::asio::transfer_at_least(1),
-        boost::bind(&AsyncHttpsJsonClient::handle_read_content, this,
+        boost::bind(&AsyncHttpsJsonStream::handle_read_content, this,
           boost::asio::placeholders::error));
   }
 
@@ -319,4 +322,4 @@ private:
   std::stringstream json_buffer;
 };
 
-
+}
