@@ -276,7 +276,7 @@ private:
       // std::cout << c;
 
       // skip non-printable characters
-      // if ((c < 32) || (c > 126)) continue;
+      if ((c < 32) || (c > 126)) continue;
 
       // read into the string buffer when we are inside an object
       if (
