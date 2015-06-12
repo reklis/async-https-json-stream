@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     boost::asio::ssl::context io_context(boost::asio::ssl::context::sslv23);
     // io_context.set_default_verify_paths();
 
-    int tweet_max = 100;
+    int tweet_max = 10;
     int tweet_count;
 
     ahjs::AsyncHttpsJsonStream c(
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
         tw_stream_params,
         [&tweet_max, &tweet_count] (const std::string& json) {
 
-            //std::cout << "json:\t" << json << std::endl;
+            std::cout << "json:\t" << json << std::endl;
 
             picojson::value v;
             std::string err = picojson::parse(v, json);

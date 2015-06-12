@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <functional>
+#include <algorithm>
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -273,51 +274,40 @@ private:
     char c;
     while (response_stream.get(c))
     {
-      // std::cout << c;
+      // std::cout << std::hex << (int)c;
 
-      // skip non-printable characters
-      if ((c < 32) || (c > 126)) continue;
-
-      // read into the string buffer when we are inside an object
-      if (
-        ('{' == c)
-        ||
-        ('}' == c)
-        ||
-        (0 != json_indent)
-      ) {
-        ++json_size;
+      // read next printable character into buffer
+      if ((c > 31) && (c < 127)) {
         json_buffer << c;
       }
 
-      // increment / decrement based on object literals
-      if ('{' == c) {
-        ++json_indent;
-      } else if ('}' == c) {
-        --json_indent;
-      }
+      // shift terminator left one
+      std::rotate(
+        json_terminator.begin(),
+        json_terminator.begin() + 1,
+        json_terminator.end());
+      json_terminator[3] = c;
 
-      // yield complete objects
+      // check for \r\n\r\n
       if (
-        (0 == json_indent)
+        (0xd == json_terminator[0])
         &&
-        (0 != json_size)
+        (0xa == json_terminator[1])
+        &&
+        (0xd == json_terminator[2])
+        &&
+        (0xa == json_terminator[3])
       ) {
-        // std::cout << "json size:\t" << json_size << '\n';
+        // yield object
         content_handler_(json_buffer.str());
-        json_indent = -1;
-      }
 
-      // reset the buffer
-      if (0 > json_indent) {
+        // reset the buffer
         json_buffer.str(std::string());
         json_buffer.clear();
-        json_size = 0;
-        json_indent = 0;
       }
     }
 
-    // std::cout << std::endl;
+    // std::cout << '|' << std::endl;
   }
 
   void show_error(const boost::system::error_code& error)
@@ -340,9 +330,8 @@ private:
   bool http_chunk_flag_;
   int http_chunk_size_;
 
-  int json_indent;
-  int json_size;
   std::stringstream json_buffer;
+  std::vector<char> json_terminator = {0,0,0,0};
 };
 
 }
