@@ -1,4 +1,4 @@
-OAUTH=-I./liboauthcpp/include -L./liboauthcpp -loauthcpp
+OAUTH=-I./liboauthcpp/include -L./liboauthcpp/build -loauthcpp
 PICOJSON=-I./picojson/
 BOOST=-I/usr/local/Cellar/boost/1.58.0/include -L/usr/local/Cellar/boost/1.58.0/lib -lboost_system -lboost_iostreams
 OPENSSL=-I/usr/local/Cellar/openssl/1.0.2/include -L/usr/local/Cellar/openssl/1.0.2/lib -lcrypto -lssl
