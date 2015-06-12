@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     boost::asio::ssl::context io_context(boost::asio::ssl::context::sslv23);
     // io_context.set_default_verify_paths();
 
-    int tweet_max = 13;
+    int tweet_max = 100;
     int tweet_count;
 
     ahjs::AsyncHttpsJsonStream c(
@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
                     const auto& screen_name = user.get("screen_name");
                     const auto& text = t["text"];
 
-                    std::cout << '@' << screen_name.to_str() << '\n';
+                    std::cout << "\n\t@" << screen_name.to_str() << '\n';
                     std::cout << '\t' << text.to_str() << "\n\n";
 
                     if (++tweet_count == tweet_max) {

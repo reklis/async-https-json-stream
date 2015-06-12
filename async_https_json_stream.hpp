@@ -229,71 +229,82 @@ private:
 
   void consume_response_content()
   {
-    std::istream response_stream(&response_);
-
     // Write whatever content we already have to output.
     // if (response_.size() > 0)
     //   std::cout << &response_;
 
-    char prevC;
-    char c;
-    while (response_stream.get(c))
-    {
-      if (('\r' == prevC) && ('\n' == c))
+    http_chunk = !http_chunk;
+
+    if (!http_chunk) {
+
+      std::istream response_stream(&response_);
+
+      char c;
+      while (response_stream.get(c))
       {
-        // line breaks mean we can flip the chunk bit
-        http_chunk = !http_chunk;
+        // if (('\r' == prevC) && ('\n' == c))
+        // {
+        //   // line breaks mean we can flip the chunk bit
+        //   http_chunk = !http_chunk;
+        // }
+        // prevC = c;
+
+        // // skip over http chunk sizes
+        // if (http_chunk) {
+        //   std::cout << "xxx\t" << c;
+        //   continue;
+        // };
+
+        // skip non-printable characters
+        if ((c < 32) || (c > 126)) continue;
+
+        // read into the string buffer when we are inside an object
+        if (
+          ('{' == c)
+          ||
+          ('}' == c)
+          ||
+          (0 != json_indent)
+        ) {
+          ++json_size;
+          json_buffer << c;
+        }
+
+        // increment / decrement based on object literals
+        if ('{' == c) {
+          ++json_indent;
+        } else if ('}' == c) {
+          --json_indent;
+        }
+
+        // yield complete objects
+        if (
+          (0 == json_indent)
+          &&
+          (0 != json_size)
+        ) {
+          // std::cout << "json size:\t" << json_size << '\n';
+          content_handler_(json_buffer.str());
+          json_indent = -1;
+        }
+
+        // reset the buffer
+        if (0 > json_indent) {
+          json_buffer.str(std::string());
+          json_buffer.clear();
+          json_size = 0;
+          json_indent = 0;
+        }
       }
-      prevC = c;
-
-      // skip over http chunk sizes
-      if (http_chunk) continue;
-
-      // skip non-printable characters
-      if ((c < 32) || (c > 126)) continue;
-
-      // read into the string buffer when we are inside an object
-      if (
-        ('{' == c)
-        ||
-        ('}' == c)
-        ||
-        (0 != json_indent)
-      ) {
-        ++json_size;
-        json_buffer << c;
-      }
-
-      // increment / decrement based on object literals
-      if ('{' == c) {
-        ++json_indent;
-      } else if ('}' == c) {
-        --json_indent;
-      }
-
-      // yield complete objects
-      if (
-        (0 == json_indent)
-        &&
-        (0 != json_size)
-      ) {
-        // std::cout << "json size:\t" << json_size << '\n';
-        content_handler_(json_buffer.str());
-        json_indent = -1;
-      }
-
-      // reset the buffer
-      if (0 > json_indent) {
-        json_buffer.str(std::string());
-        json_buffer.clear();
-        json_size = 0;
-        json_indent = 0;
-      }
+    } else {
+      // std::istream response_stream(&response_);
+      // std::string chunk_size;
+      // std::getline(response_stream, chunk_size);
+      // std::cout << "chunk size:\t" << chunk_size;
     }
 
-    // Continue reading remaining data until EOF
-    boost::asio::async_read(socket_, response_,
-        boost::asio::transfer_at_least(1),
+    // Continue reading
+    boost::asio::async_read_until(socket_, response_, "\r\n\r\n",
         boost::bind(&AsyncHttpsJsonStream::handle_read_content, this,
           boost::asio::placeholders::error));
   }
