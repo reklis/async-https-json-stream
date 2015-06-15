@@ -74,8 +74,6 @@ int main(int argc, char** argv) {
         tw_stream_params,
         [&tweet_max, &tweet_count] (const std::string& json) {
 
-            std::cout << "json:\t" << json << std::endl;
-
             picojson::value v;
             std::string err = picojson::parse(v, json);
 
@@ -107,6 +105,8 @@ int main(int argc, char** argv) {
 
         }
     );
+
+    c.debug(true);
 
     io_service.run();
 

@@ -53,6 +53,11 @@ public:
           boost::asio::placeholders::iterator));
   }
 
+  void debug(bool d)
+  {
+    debug_log_ = d;
+  }
+
 private:
 
   bool verify_certificate(bool preverified, boost::asio::ssl::verify_context& ctx)
@@ -72,7 +77,7 @@ private:
   {
     if (!err)
     {
-      // std::cout << "Resolve OK\n";
+      debug_log("Resolve OK");
 
       socket_.set_verify_mode(
         boost::asio::ssl::context::verify_none);
@@ -90,7 +95,7 @@ private:
     }
     else
     {
-      show_error(err);
+      show_error("Resolve Failed", err);
     }
   }
 
@@ -98,7 +103,7 @@ private:
   {
     if (!err)
     {
-      // std::cout << "Connect OK\n";
+      debug_log("Connect OK");
 
       socket_.async_handshake(boost::asio::ssl::stream_base::client,
               boost::bind(&AsyncHttpsJsonStream::handle_handshake, this,
@@ -106,7 +111,7 @@ private:
     }
     else
     {
-      show_error(err);
+      show_error("Connect Failed", err);
     }
   }
 
@@ -114,7 +119,7 @@ private:
   {
     if (!err)
     {
-      // std::cout << "Handshake OK\n";
+      debug_log("Handshake OK");
 
       boost::asio::async_write(socket_, request_,
         boost::bind(&AsyncHttpsJsonStream::handle_write_request, this,
@@ -122,7 +127,7 @@ private:
     }
     else
     {
-        std::cout << "Handshake failed: " << err.message() << "\n";
+      show_error("Handshake Failed", err);
     }
   }
 
@@ -130,7 +135,7 @@ private:
   {
     if (!err)
     {
-      // std::cout << "Write OK\n";
+      debug_log("Write OK");
 
       // Read the response status line. The response_ streambuf will
       // automatically grow to accommodate the entire line. The growth may be
@@ -141,7 +146,7 @@ private:
     }
     else
     {
-      show_error(err);
+      show_error("Write Failed", err);
     }
   }
 
@@ -149,7 +154,7 @@ private:
   {
     if (!err)
     {
-      // std::cout << "Read Status OK\n";
+      debug_log("Read Status OK");
 
       std::istream response_stream(&response_);
       std::string http_version;
@@ -161,15 +166,14 @@ private:
 
       if (!response_stream || http_version.substr(0, 5) != "HTTP/")
       {
-        std::cout << "Invalid response\n";
+        show_error("Invalid response");
         return;
       }
 
       if (status_code != 200)
       {
-        std::cout << "Response returned with status code ";
-        std::cout << status_code << ":" << status_message << "\n";
-
+        std::cerr << "Response returned with status code "
+          << status_code << ":" << status_message << "\n";
         // return;
       }
 
@@ -180,7 +184,7 @@ private:
     }
     else
     {
-      show_error(err);
+      show_error("Read Status Failed", err);
     }
   }
 
@@ -188,7 +192,7 @@ private:
   {
     if (!err)
     {
-      // std::cout << "Read Header OK\n";
+      debug_log("Read Header OK");
 
       consume_response_headers();
       consume_response_content();
@@ -196,7 +200,7 @@ private:
     }
     else
     {
-      std::cout << "Error: " << err << "\n";
+      show_error("Read Header Failed", err);
     }
   }
 
@@ -204,14 +208,14 @@ private:
   {
     if (!err)
     {
-      // std::cout << "Read Content OK\n";
+      debug_log("Read Content OK");
 
       consume_response_content();
 
     }
     else if (err != boost::asio::error::eof)
     {
-      std::cout << "Error: " << err << "\n";
+      show_error("Read Content Failed", err);
     }
   }
 
@@ -222,10 +226,9 @@ private:
     std::string header;
     while (std::getline(response_stream, header) && header != "\r")
     {
-      std::cout << header << "\n";
+      debug_log(header);
       continue;
     }
-    std::cout << "\n";
   }
 
   void consume_response_content()
@@ -262,7 +265,9 @@ private:
     ss << std::hex << &response_;
     ss >> http_chunk_size_;
 
-    // std::cout << "chunk size:" << http_chunk_size_ << std::endl;
+    if (debug_log_) {
+      std::cout << "chunk size: " << http_chunk_size_ << '\n';
+    }
   }
 
   void consume_response_chunkdata()
@@ -298,6 +303,10 @@ private:
         &&
         (0xa == json_terminator[3])
       ) {
+        if (debug_log_) {
+          std::cout << "json: " << json_buffer.str() << '\n';
+        }
+
         // yield object
         content_handler_(json_buffer.str());
 
@@ -310,9 +319,25 @@ private:
     // std::cout << '|' << std::endl;
   }
 
-  void show_error(const boost::system::error_code& error)
+  template<typename T>
+  void show_error(T msg)
   {
-    std::cout << "Error: " << error.message() << "\n";
+    std::cerr << '\n' << msg << '\n';
+  }
+
+  void show_error(const char* msg, const boost::system::error_code& error)
+  {
+    std::cerr
+      << '\n' << msg
+      << "\nError: " << error.message()
+      << '\n';
+  }
+
+  template<typename T>
+  void debug_log(T msg)
+  {
+    if (debug_log_)
+      std::cout << msg << '\n';
   }
 
   boost::asio::ip::tcp::resolver resolver_;
@@ -332,6 +357,8 @@ private:
 
   std::stringstream json_buffer;
   std::vector<char> json_terminator = {0,0,0,0};
+
+  bool debug_log_ = false;
 };
 
 }
