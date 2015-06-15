@@ -170,14 +170,19 @@ private:
         return;
       }
 
-      if (status_code != 200)
+      if (debug_log_)
       {
-        std::cerr << "Response returned with status code "
-          << status_code << ":" << status_message << "\n";
-        // return;
+        std::cout << "HTTP Status: "
+          << status_code << ":" << status_message << '\n';
       }
 
-      // Read the response headers, which are terminated by a blank line.
+      if ((status_code < 200) || (status_code > 299))
+      {
+        show_error("Response status code not OK");
+        return;
+      }
+
+      // read the response headers which are terminated by a blank line
       boost::asio::async_read_until(socket_, response_, "\r\n",
           boost::bind(&AsyncHttpsJsonStream::handle_read_headers, this,
             boost::asio::placeholders::error));
@@ -265,8 +270,10 @@ private:
     ss << std::hex << &response_;
     ss >> http_chunk_size_;
 
-    if (debug_log_) {
-      std::cout << "chunk size: " << http_chunk_size_ << '\n';
+    if (debug_log_)
+    {
+      std::cout << "chunk size: "
+        << http_chunk_size_ << '\n';
     }
   }
 
@@ -303,8 +310,10 @@ private:
         &&
         (0xa == json_terminator[3])
       ) {
-        if (debug_log_) {
-          std::cout << "json: " << json_buffer.str() << '\n';
+        if (debug_log_)
+        {
+          std::cout << "json: "
+            << json_buffer.str() << '\n';
         }
 
         // yield object
@@ -322,14 +331,14 @@ private:
   template<typename T>
   void show_error(T msg)
   {
-    std::cerr << '\n' << msg << '\n';
+    std::cerr << "\nError: " << msg << '\n';
   }
 
   void show_error(const char* msg, const boost::system::error_code& error)
   {
     std::cerr
-      << '\n' << msg
-      << "\nError: " << error.message()
+      << "\nError: " << msg
+      << "\nInternal Error: " << error.message()
       << '\n';
   }
 
