@@ -4,6 +4,7 @@ c++ header-only async http library to stream json to a lambda using boost asio
 
 in a nutshell:
 
+```c_cpp
     ahjs::AsyncHttpsJsonStream c(
         io_service,
         io_context,
@@ -18,6 +19,7 @@ in a nutshell:
 
         }
     );
+```
 
 primarily designed and built to work with twitter streams and chunked http json responses
 see test.cpp for example code that uses twitter OAuth and picojson for parsing
@@ -26,10 +28,13 @@ The boost io context settings are used to validate the certificate chain.
 
 ### debug logging
 
+```c_cpp
     c.debug(true);
+```
 
 ### error handling
 
+```c_cpp
     c.on_error([&c] (auto error, auto code)
     {
 
@@ -52,15 +57,18 @@ The boost io context settings are used to validate the certificate chain.
         */
 
     });
-
+```
 
 ### stopping the stream
 
+```c_cpp
     c.stop();
     // plus whatever io_context cleanup
+```
 
 ### running the test
 
+```sh
     # fetch and compile dependencies
     git submodule update --init
     pushd liboauthcpp/build
@@ -81,6 +89,7 @@ The boost io context settings are used to validate the certificate chain.
 
     # run
     ./test.o
+```
 
 ### contributing
 
