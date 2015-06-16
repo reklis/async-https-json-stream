@@ -22,20 +22,70 @@ in a nutshell:
 primarily designed and built to work with twitter streams and chunked http json responses
 see test.cpp for example code that uses twitter OAuth and picojson for parsing
 
-currently accepts any certificate as valid for testing instead of properly validating certificate chain
+The boost io context settings are used to validate the certificate chain.
+
+### debug logging
+
+    c.debug(true);
+
+### error handling
+
+    c.on_error([&c] (auto error, auto code)
+    {
+
+        std::cerr << "stream error: " << error
+            << "\ncode: " << code << '\n';
+
+        /* error codes are defined as an enum
+
+        enum StreamErrorCode {
+          Resolve = 1,
+          Connect,
+          Handshake,
+          Write,
+          ReadHeader,
+          ReadStatus,
+          StatusValue,
+          ReadContent
+        };
+
+        */
+
+    });
+
+
+### stopping the stream
+
+    c.stop();
+    // plus whatever io_context cleanup
 
 ### running the test
 
+    # fetch and compile dependencies
+    git submodule update --init
+    pushd liboauthcpp/build
+    cmake .
+    make
+    popd
+
     # edit .env to setup your environment variables
     cp .env.sample.sh .env
+    # export tw_consumer_key="..."
+    # export tw_consumer_secret="..."
+    # export tw_oauth_token="..."
+    # export tw_oauth_token_secret="..."
     source .env
 
     # compile
-    make
+    make clean all
 
     # run
     ./test.o
 
-### License
+### contributing
 
-MIT
+fork and send me a pull request or submit a bug with a standard unix patch file
+
+### license
+
+GNU GPL v3
