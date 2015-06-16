@@ -13,7 +13,19 @@
 namespace ahjs
 {
 
+enum StreamErrorCode {
+  Resolve = 1,
+  Connect,
+  Handshake,
+  Write,
+  ReadHeader,
+  ReadStatus,
+  StatusValue,
+  ReadContent
+};
+
 using ContentCallback = std::function<void(const std::string&)>;
+using ErrorCallback = std::function<void(const std::string&, const StreamErrorCode)>;
 
 class AsyncHttpsJsonStream
 {
@@ -58,6 +70,11 @@ public:
     debug_log_ = d;
   }
 
+  void on_error(ErrorCallback cb)
+  {
+    error_handler_ = cb;
+  }
+
 private:
 
   bool verify_certificate(bool preverified, boost::asio::ssl::verify_context& ctx)
@@ -95,7 +112,7 @@ private:
     }
     else
     {
-      show_error("Resolve Failed", err);
+      show_error("Resolve Failed", StreamErrorCode::Resolve, &err);
     }
   }
 
@@ -111,7 +128,7 @@ private:
     }
     else
     {
-      show_error("Connect Failed", err);
+      show_error("Connect Failed", StreamErrorCode::Connect, &err);
     }
   }
 
@@ -127,7 +144,7 @@ private:
     }
     else
     {
-      show_error("Handshake Failed", err);
+      show_error("Handshake Failed", StreamErrorCode::Handshake, &err);
     }
   }
 
@@ -146,7 +163,7 @@ private:
     }
     else
     {
-      show_error("Write Failed", err);
+      show_error("Write Failed", StreamErrorCode::Write, &err);
     }
   }
 
@@ -166,7 +183,7 @@ private:
 
       if (!response_stream || http_version.substr(0, 5) != "HTTP/")
       {
-        show_error("Invalid response");
+        show_error("Invalid response", StreamErrorCode::ReadStatus);
         return;
       }
 
@@ -178,7 +195,7 @@ private:
 
       if ((status_code < 200) || (status_code > 299))
       {
-        show_error("Response status code not OK");
+        show_error("Response status code not OK", StreamErrorCode::StatusValue);
         return;
       }
 
@@ -189,7 +206,7 @@ private:
     }
     else
     {
-      show_error("Read Status Failed", err);
+      show_error("Read Status Failed", StreamErrorCode::ReadStatus, &err);
     }
   }
 
@@ -205,7 +222,7 @@ private:
     }
     else
     {
-      show_error("Read Header Failed", err);
+      show_error("Read Header Failed", StreamErrorCode::ReadHeader, &err);
     }
   }
 
@@ -220,7 +237,7 @@ private:
     }
     else if (err != boost::asio::error::eof)
     {
-      show_error("Read Content Failed", err);
+      show_error("Read Content Failed", StreamErrorCode::ReadContent, &err);
     }
   }
 
@@ -333,18 +350,18 @@ private:
     // std::cout << '|' << std::endl;
   }
 
-  template<typename T>
-  void show_error(T msg)
+  void show_error(const char* msg, const StreamErrorCode code, const boost::system::error_code* error = nullptr)
   {
-    std::cerr << "\nError: " << msg << '\n';
-  }
+    if (debug_log_)
+    {
+      std::cerr << "\nError: " << msg << '\n';
 
-  void show_error(const char* msg, const boost::system::error_code& error)
-  {
-    std::cerr
-      << "\nError: " << msg
-      << "\nInternal Error: " << error.message()
-      << '\n';
+      if (nullptr != error)
+        std::cerr << "Internal Error: " << error->message() << '\n';
+    }
+
+    if (nullptr != error_handler_)
+      error_handler_(msg, code);
   }
 
   template<typename T>
@@ -363,6 +380,7 @@ private:
   boost::asio::streambuf response_;
 
   ContentCallback content_handler_;
+  ErrorCallback error_handler_ = nullptr;
 
   // Transfer-Encoding: chunked
   // http://en.wikipedia.org/wiki/Chunked_transfer_encoding

@@ -108,6 +108,14 @@ int main(int argc, char** argv) {
 
     c.debug(true);
 
+    c.on_error([&c] (auto error, auto code) {
+        std::cerr << "stream error: " << error
+            << "\ncode: " << code << '\n';
+
+        c.stop();
+        exit(1);
+    });
+
     io_service.run();
 
     return 0;
