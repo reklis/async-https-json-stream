@@ -240,22 +240,28 @@ private:
   {
     http_chunk_flag_ = !http_chunk_flag_;
 
-    if (http_chunk_flag_) {
+    if (http_chunk_flag_)
+    {
       consume_response_chunksize();
 
-      if (0 != http_chunk_size_) {
+      if (0 != http_chunk_size_)
+      {
         boost::asio::async_read(socket_, response_,
             boost::asio::transfer_at_least(http_chunk_size_+2), // chunk size + \r\n
             boost::bind(&AsyncHttpsJsonStream::handle_read_content, this,
               boost::asio::placeholders::error));
-      } else {
+      }
+      else
+      {
         http_chunk_flag_ = !http_chunk_flag_;
         boost::asio::async_read_until(socket_, response_, "\r\n",
             boost::bind(&AsyncHttpsJsonStream::handle_read_content, this,
               boost::asio::placeholders::error));
       }
 
-    } else {
+    }
+    else
+    {
       consume_response_chunkdata();
 
       boost::asio::async_read_until(socket_, response_, "\r\n",
@@ -289,9 +295,8 @@ private:
       // std::cout << std::hex << (int)c;
 
       // read next printable character into buffer
-      if ((c > 31) && (c < 127)) {
+      if ((c > 31) && (c < 127))
         json_buffer << c;
-      }
 
       // shift terminator left one
       std::rotate(
