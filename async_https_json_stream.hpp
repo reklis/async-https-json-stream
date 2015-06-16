@@ -104,8 +104,6 @@ private:
       // socket_.lowest_layer()
       //   .set_option(boost::asio::ip::tcp::no_delay(true));
 
-      // Attempt a connection to each endpoint in the list until we
-      // successfully establish a connection.
       boost::asio::async_connect(socket_.lowest_layer(), endpoint_iterator,
           boost::bind(&AsyncHttpsJsonStream::handle_connect, this,
             boost::asio::placeholders::error));
@@ -154,9 +152,6 @@ private:
     {
       debug_log("Write OK");
 
-      // Read the response status line. The response_ streambuf will
-      // automatically grow to accommodate the entire line. The growth may be
-      // limited by passing a maximum size to the streambuf constructor.
       boost::asio::async_read_until(socket_, response_, "\r\n",
           boost::bind(&AsyncHttpsJsonStream::handle_read_status_line, this,
             boost::asio::placeholders::error));
@@ -199,7 +194,6 @@ private:
         return;
       }
 
-      // read the response headers which are terminated by a blank line
       boost::asio::async_read_until(socket_, response_, "\r\n",
           boost::bind(&AsyncHttpsJsonStream::handle_read_headers, this,
             boost::asio::placeholders::error));
@@ -218,7 +212,6 @@ private:
 
       consume_response_headers();
       consume_response_content();
-
     }
     else
     {
@@ -233,7 +226,6 @@ private:
       debug_log("Read Content OK");
 
       consume_response_content();
-
     }
     else if (err != boost::asio::error::eof)
     {
@@ -243,13 +235,11 @@ private:
 
   void consume_response_headers()
   {
-    // skip over the response headers
     std::istream response_stream(&response_);
     std::string header;
     while (std::getline(response_stream, header) && header != "\r")
     {
       debug_log(header);
-      continue;
     }
   }
 
@@ -373,7 +363,6 @@ private:
 
   boost::asio::ip::tcp::resolver resolver_;
 
-  // boost::asio::ip::tcp::socket socket_;
   boost::asio::ssl::stream<boost::asio::ip::tcp::socket> socket_;
 
   boost::asio::streambuf request_;
@@ -390,7 +379,7 @@ private:
   std::stringstream json_buffer;
   std::vector<char> json_terminator = {0,0,0,0};
 
-  bool debug_log_ = false;
+  bool debug_log_;
 };
 
 }
