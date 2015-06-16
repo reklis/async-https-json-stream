@@ -84,14 +84,17 @@ private:
 
   bool verify_certificate(bool preverified, boost::asio::ssl::verify_context& ctx)
   {
-      // char subject_name[256];
-      // X509* cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
-      // X509_NAME_oneline(X509_get_subject_name(cert), subject_name, 256);
-      // std::cout << "Verifying:\n" << subject_name << std::endl;
-      // return preverified;
+    char subject_name[256];
+    X509* cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
+    X509_NAME_oneline(X509_get_subject_name(cert), subject_name, 256);
 
-      // accept any certificate
-      return true;
+    if (debug_log_)
+    {
+      std::cout << "Certificate Subject:\n" << subject_name
+        << "\nPreverified: " << preverified << '\n';
+    }
+
+    return preverified;
   }
 
   void handle_resolve(const boost::system::error_code& err,
@@ -103,8 +106,6 @@ private:
     {
       debug_log("Resolve OK");
 
-      socket_.set_verify_mode(
-        boost::asio::ssl::context::verify_none);
       socket_.set_verify_callback(
         boost::bind(&AsyncHttpsJsonStream::verify_certificate, this, _1, _2));
 

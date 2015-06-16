@@ -10,6 +10,8 @@
 
 std::string tw_stream_host = "stream.twitter.com";
 std::string tw_stream_port = "443";
+// std::string tw_stream_host = "localhost";
+// std::string tw_stream_port = "8080";
 std::string tw_stream_endpoint = "/1.1/statuses/filter.json";
 std::string tw_stream_url = "https://" + tw_stream_host + tw_stream_endpoint;
 
@@ -58,11 +60,27 @@ int main(int argc, char** argv) {
 
     // setup
     boost::asio::io_service io_service;
-    boost::asio::ssl::context io_context(boost::asio::ssl::context::sslv23);
-    // io_context.set_default_verify_paths();
 
-    int tweet_max = 10;
-    int tweet_count;
+    boost::asio::ssl::context io_context(boost::asio::ssl::context::sslv23);
+    // io_context.set_verify_mode(boost::asio::ssl::verify_none);
+
+    io_context.set_options(boost::asio::ssl::context::default_workarounds);
+
+    io_context.set_default_verify_paths();
+
+    boost::system::error_code verify_mode_error;
+    io_context.set_verify_mode(
+        boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert,
+        verify_mode_error);
+
+    if (verify_mode_error)
+    {
+        std::cerr << "verify mode error: " << verify_mode_error.message() << '\n';
+        exit(1);
+    }
+
+    const int tweet_max = 13;
+    int tweet_count = 0;
 
     ahjs::AsyncHttpsJsonStream c(
         io_service,
