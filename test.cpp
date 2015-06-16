@@ -72,7 +72,12 @@ int main(int argc, char** argv) {
         tw_stream_endpoint,
         oAuthHeader,
         tw_stream_params,
-        [&tweet_max, &tweet_count] (const std::string& json) {
+        [&c, &tweet_max, &tweet_count] (const std::string& json) {
+
+            if (++tweet_count >= tweet_max) {
+                c.stop();
+                exit(0);
+            }
 
             picojson::value v;
             std::string err = picojson::parse(v, json);
@@ -94,11 +99,6 @@ int main(int argc, char** argv) {
 
                     std::cout << "\n\t@" << screen_name.to_str() << '\n';
                     std::cout << '\t' << text.to_str() << "\n\n";
-
-                    if (++tweet_count == tweet_max) {
-                        exit(0);
-                    }
-
                 }
 
             }

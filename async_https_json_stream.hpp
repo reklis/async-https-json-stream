@@ -70,6 +70,11 @@ public:
     debug_log_ = d;
   }
 
+  void stop()
+  {
+    active_ = false;
+  }
+
   void on_error(ErrorCallback cb)
   {
     error_handler_ = cb;
@@ -92,6 +97,8 @@ private:
   void handle_resolve(const boost::system::error_code& err,
       boost::asio::ip::tcp::resolver::iterator endpoint_iterator)
   {
+    if (!active_) return;
+
     if (!err)
     {
       debug_log("Resolve OK");
@@ -116,6 +123,8 @@ private:
 
   void handle_connect(const boost::system::error_code& err)
   {
+    if (!active_) return;
+
     if (!err)
     {
       debug_log("Connect OK");
@@ -132,6 +141,8 @@ private:
 
   void handle_handshake(const boost::system::error_code& err)
   {
+    if (!active_) return;
+
     if (!err)
     {
       debug_log("Handshake OK");
@@ -148,6 +159,8 @@ private:
 
   void handle_write_request(const boost::system::error_code& err)
   {
+    if (!active_) return;
+
     if (!err)
     {
       debug_log("Write OK");
@@ -164,6 +177,8 @@ private:
 
   void handle_read_status_line(const boost::system::error_code& err)
   {
+    if (!active_) return;
+
     if (!err)
     {
       debug_log("Read Status OK");
@@ -206,6 +221,8 @@ private:
 
   void handle_read_headers(const boost::system::error_code& err)
   {
+    if (!active_) return;
+
     if (!err)
     {
       debug_log("Read Header OK");
@@ -221,6 +238,8 @@ private:
 
   void handle_read_content(const boost::system::error_code& err)
   {
+    if (!active_) return;
+
     if (!err)
     {
       debug_log("Read Content OK");
@@ -380,6 +399,8 @@ private:
   std::vector<char> json_terminator = {0,0,0,0};
 
   bool debug_log_;
+
+  bool active_ = true;
 };
 
 }
